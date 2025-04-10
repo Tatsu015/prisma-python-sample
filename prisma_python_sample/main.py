@@ -1,12 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from prisma import Prisma
 from prisma.models import User
-from contextlib import asynccontextmanager
 
 prisma = Prisma()
 
 
-@asynccontextmanager
 async def lifespan(app: FastAPI):
     await prisma.connect()
     yield
@@ -16,6 +14,10 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+async def get_prisma():
+    return prisma
+
+
 @app.get('/users', response_model=list[User])
 async def get_users():
     users = await prisma.user.find_many()
@@ -23,7 +25,7 @@ async def get_users():
 
 
 @app.get('/users/{email}', response_model=User)
-async def get_user(email: str):
+async def get_user(email: str, prisma: Prisma = Depends(get_prisma)):
     user = await prisma.user.find_first(
         where={
             'email': email
@@ -35,7 +37,7 @@ async def get_user(email: str):
 
 
 @app.post('/users', response_model=User)
-async def create_user(email: str, name: str):
+async def create_user(email: str, name: str, prisma: Prisma = Depends(get_prisma)):
     try:
         user = await prisma.user.create(
             data={"email": email, "name": name}
@@ -46,8 +48,8 @@ async def create_user(email: str, name: str):
 
 
 @app.put('/users/{email}', response_model=User)
-async def update_user(email: str, new_name: str):
-    existing_user = await prisma.find_first(
+async def update_user(email: str, new_name: str, prisma: Prisma = Depends(get_prisma)):
+    existing_user = await prisma.user.find_first(
         where={
             'email': email
         }
@@ -63,7 +65,7 @@ async def update_user(email: str, new_name: str):
 
 
 @app.delete('/users/{email}')
-async def delete_user(email: str):
+async def delete_user(email: str, prisma: Prisma = Depends(get_prisma)):
     existing_user = await prisma.user.find_first(
         where={
             'email': email
@@ -75,4 +77,4 @@ async def delete_user(email: str):
     deleted_user = await prisma.user.delete(
         where={'email': email}
     )
-    return {"message": f"User with email {deleted_user} deleted successfully"}
+    return {"message": f"User with email {deleted_user} deleted success"}
