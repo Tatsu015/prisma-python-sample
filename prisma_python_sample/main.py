@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, APIRouter
 from prisma import Prisma
 from prisma.models import User
 
@@ -13,18 +13,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+router = APIRouter()
+
 
 async def get_prisma():
     return prisma
 
 
-@app.get('/users', response_model=list[User])
+@router.get('/users', response_model=list[User])
 async def get_users():
     users = await prisma.user.find_many()
     return users
 
 
-@app.get('/users/{email}', response_model=User)
+@router.get('/users/{email}', response_model=User)
 async def get_user(email: str, prisma: Prisma = Depends(get_prisma)):
     user = await prisma.user.find_first(
         where={
@@ -36,7 +38,7 @@ async def get_user(email: str, prisma: Prisma = Depends(get_prisma)):
     return user
 
 
-@app.post('/users', response_model=User)
+@router.post('/users', response_model=User)
 async def create_user(email: str, name: str, prisma: Prisma = Depends(get_prisma)):
     try:
         user = await prisma.user.create(
@@ -47,7 +49,7 @@ async def create_user(email: str, name: str, prisma: Prisma = Depends(get_prisma
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put('/users/{email}', response_model=User)
+@router.put('/users/{email}', response_model=User)
 async def update_user(email: str, new_name: str, prisma: Prisma = Depends(get_prisma)):
     existing_user = await prisma.user.find_first(
         where={
@@ -64,7 +66,7 @@ async def update_user(email: str, new_name: str, prisma: Prisma = Depends(get_pr
     return updated_user
 
 
-@app.delete('/users/{email}')
+@router.delete('/users/{email}')
 async def delete_user(email: str, prisma: Prisma = Depends(get_prisma)):
     existing_user = await prisma.user.find_first(
         where={
@@ -78,3 +80,5 @@ async def delete_user(email: str, prisma: Prisma = Depends(get_prisma)):
         where={'email': email}
     )
     return {"message": f"User with email {deleted_user} deleted success"}
+
+app.include_router(router)
