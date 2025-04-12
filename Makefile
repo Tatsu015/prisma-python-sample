@@ -6,3 +6,6 @@ test:
 
 test-plan:
 	uv run pytest --collect-only
+
+migrate:
+	uv run prisma db push
