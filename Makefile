@@ -3,3 +3,6 @@ dev:
 
 test:
 	uv run pytest
+
+test-plan:
+	uv run pytest --collect-only
