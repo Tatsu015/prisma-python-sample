@@ -6,23 +6,29 @@ from fastapi import FastAPI
 from prisma import Prisma
 
 
+async def __delete_all(prisma: Prisma):
+    await prisma.user.delete_many()
+    await prisma.post.delete_many()
+
+
 @pytest_asyncio.fixture
 async def prisma() -> Prisma:
-    prisma = get_prisma()
-    await prisma.connect()
+    p = get_prisma()
+    await p.connect()
 
-    yield prisma
+    yield p
 
-    await prisma.disconnect()
+    await __delete_all(p)
+    await p.disconnect()
 
 
 @pytest_asyncio.fixture
 async def app() -> AsyncClient:
-    app = FastAPI()
-    app.include_router(router)
+    a = FastAPI()
+    a.include_router(router)
 
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
+        transport=ASGITransport(app=a), base_url="http://test"
     ) as ac:
         yield ac
 
@@ -36,7 +42,7 @@ async def test_get(prisma: Prisma, app: AsyncClient):
         }
     )
 
-    response = await app.get("/users")
-    assert response.status_code == 200
-    j = response.json()
+    res = await app.get("/users")
+    assert res.status_code == 200
+    j = res.json()
     assert len(j) == 1
