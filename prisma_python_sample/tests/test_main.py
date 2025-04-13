@@ -23,7 +23,7 @@ async def prisma() -> Prisma:
 
 
 @pytest_asyncio.fixture
-async def app() -> AsyncClient:
+async def async_client() -> AsyncClient:
     a = FastAPI()
     a.include_router(router)
 
@@ -34,7 +34,7 @@ async def app() -> AsyncClient:
 
 
 @pytest.mark.asyncio
-async def test_get(prisma: Prisma, app: AsyncClient):
+async def test_get(prisma: Prisma, async_client: AsyncClient):
     await prisma.user.create(
         data={
             "email": "test@gmail.com",
@@ -42,7 +42,7 @@ async def test_get(prisma: Prisma, app: AsyncClient):
         }
     )
 
-    res = await app.get("/users")
+    res = await async_client.get("/users")
     assert res.status_code == 200
     j = res.json()
     assert len(j) == 1
