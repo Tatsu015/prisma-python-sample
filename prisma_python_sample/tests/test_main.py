@@ -1,8 +1,7 @@
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from prisma_python_sample.main import router, get_prisma
-from fastapi import FastAPI
+from prisma_python_sample.main import app, get_prisma
 from prisma import Prisma
 
 
@@ -24,11 +23,8 @@ async def prisma() -> Prisma:
 
 @pytest_asyncio.fixture
 async def async_client() -> AsyncClient:
-    a = FastAPI()
-    a.include_router(router)
-
     async with AsyncClient(
-        transport=ASGITransport(app=a), base_url="http://test"
+        transport=ASGITransport(app=app), base_url="http://test"
     ) as ac:
         yield ac
 
