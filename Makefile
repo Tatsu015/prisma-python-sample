@@ -9,3 +9,7 @@ test-plan:
 
 migrate:
 	uv run prisma db push
+
+db-reset:
+	rm database.db && make migrate
+	
